@@ -156,12 +156,12 @@
    and votes are never sent to the sheet. Password: reelgood2026 */
 
 var SANDPIT = true;
-var OPEN_TIME  = "2026-07-11T17:00:00+10:00";
+var OPEN_TIME  = "2026-07-11T10:00:00+10:00";
 var CLOSE_TIME = "2026-07-11T18:15:00+10:00";
 var MAX_RANKS = 3;
 var VOTED_KEY = "rgff_award_voted_2026_sandpit";
 
-var WIN_START = Date.parse("2026-07-11T16:30:00+10:00");
+var WIN_START = Date.parse("2026-07-11T09:30:00+10:00");
 var WIN_END   = Date.parse("2026-07-11T18:45:00+10:00");
 var simTime   = WIN_START;
 function getNow(){ return simTime; }
@@ -306,8 +306,8 @@ function setSim(t){ simTime = t; scrub.value = t; updateReadout(); applyGate(); 
 scrub.addEventListener("input", function(){ pause(); setSim(+scrub.value); });
 
 var presets = [
-  ["Before", "2026-07-11T16:45:00+10:00"],
-  ["During", "2026-07-11T17:30:00+10:00"],
+  ["Before", "2026-07-11T09:45:00+10:00"],
+  ["During", "2026-07-11T13:00:00+10:00"],
   ["After",  "2026-07-11T18:20:00+10:00"]
 ];
 var pc = document.getElementById("presets");
