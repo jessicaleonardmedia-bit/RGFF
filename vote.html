@@ -105,14 +105,12 @@
     <h2>Vote's in. Nice one.</h2>
     <p>Thanks for backing your favourites.</p>
     <div class="yourpicks" id="yourpicks"></div>
-    <div class="again"><a id="again">Not you? Vote again</a></div>
   </div>
 
   <!-- ALREADY VOTED -->
   <div class="screen" id="already">
     <h2>Already voted</h2>
-    <p>Looks like a vote's already been cast from this device.</p>
-    <div class="again"><a id="revote">Someone else voting? Tap here</a></div>
+    <p>This device has already cast its vote. One vote per device, so you're all set.</p>
   </div>
 
 </div>
@@ -315,12 +313,6 @@ function submit(){
 }
 
 document.getElementById("go").addEventListener("click", submit);
-document.getElementById("again").addEventListener("click", function(){
-  clearVoted(); picked = []; renderGrid(); renderPicks(); applyGate();
-});
-document.getElementById("revote").addEventListener("click", function(){
-  clearVoted(); picked = []; renderGrid(); renderPicks(); applyGate();
-});
 window.addEventListener("resize", postHeight);
 
 // tick: keep the countdown live and flip screens when the time passes
