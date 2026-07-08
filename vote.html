@@ -54,7 +54,7 @@
   .demo{background:var(--maroon); color:#fff; text-align:center; font-size:12px;
     padding:6px; border-radius:8px; margin-bottom:14px}
 
-  .screen{display:none; text-align:center; padding:60px 20px}
+  .screen{display:none; text-align:center; padding:56px 20px}
   .screen.show{display:block}
   .screen h2{color:var(--blue); font-size:26px; margin:0 0 10px}
   .screen p{font-size:15px; margin:6px 0}
@@ -63,6 +63,13 @@
   .yourpicks div{font-weight:700; padding:3px 0}
   .again{margin-top:22px; font-size:13px}
   .again a{color:var(--blue); font-weight:700; cursor:pointer}
+
+  .clock{display:inline-flex; gap:10px; margin-top:20px}
+  .cell{background:#fff; border:2px solid var(--maroon); border-radius:12px; padding:10px 14px;
+    min-width:64px; box-shadow:0 3px 0 var(--maroon)}
+  .cell .n{font-size:28px; font-weight:900; color:var(--blue); line-height:1}
+  .cell .l{font-size:11px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; margin-top:4px}
+  .opentime{font-weight:800; color:var(--maroon)}
 </style>
 </head>
 <body>
@@ -76,6 +83,21 @@
     </header>
     <div id="demo" class="demo" style="display:none">Demo mode. Not wired to the sheet yet.</div>
     <div class="grid" id="grid"></div>
+  </div>
+
+  <!-- HOLDING (before open time) -->
+  <div class="screen" id="holding">
+    <h1 style="color:var(--blue);font-size:24px;font-weight:900;margin-bottom:8px">ReelGood Audience Award</h1>
+    <h2>Voting opens soon</h2>
+    <p>Come back at <span class="opentime" id="opentime"></span>.</p>
+    <div class="clock" id="clock"></div>
+  </div>
+
+  <!-- CLOSED (after close time) -->
+  <div class="screen" id="closed">
+    <h2>Voting's closed</h2>
+    <p>Thanks to everyone who voted.</p>
+    <p>The winner's announced at the ceremony.</p>
   </div>
 
   <!-- THANKS -->
@@ -107,9 +129,16 @@
 
 <script>
 /* ============================================================
-   CONFIG  ->  after you deploy the Apps Script, paste its URL here
+   CONFIG
    ============================================================ */
 var ENDPOINT = "https://script.google.com/macros/s/AKfycbyxaNU4XA8VY5DVVjAiIC2XuZnbcZGW4ELaWyy8ifoh76CoPZKhoffQuK4LMVO2c20/exec";
+
+/* When voting opens and closes. Melbourne time. Keep the +10:00.
+   Format: YYYY-MM-DDThh:mm:ss+10:00  (24-hour clock)
+   Leave a value as "" to skip that gate (e.g. OPEN_TIME="" = open right away). */
+var OPEN_TIME  = "2026-07-11T17:00:00+10:00";  // <-- set to when voting opens
+var CLOSE_TIME = "2026-07-11T18:15:00+10:00";  // <-- set to when voting closes ("" for no auto-close)
+
 var MAX_RANKS = 3;
 var VOTED_KEY = "rgff_award_voted_2026";
 
@@ -141,12 +170,11 @@ var FILMS = [
   {id:25, t:"FAMISHED",                         d:"Nathan Sirikumara"}
 ];
 
-var picked = []; // ordered array of film ids
+var picked = [];
 var byId = {}; FILMS.forEach(function(f){ byId[f.id] = f; });
+var currentScreen = "";
 
-function store(get){
-  try{ return get ? localStorage.getItem(VOTED_KEY) : null; }catch(e){ return null; }
-}
+function store(get){ try{ return get ? localStorage.getItem(VOTED_KEY) : null; }catch(e){ return null; } }
 function markVoted(){ try{ localStorage.setItem(VOTED_KEY, "1"); }catch(e){} }
 function clearVoted(){ try{ localStorage.removeItem(VOTED_KEY); }catch(e){} }
 
@@ -199,18 +227,69 @@ function postHeight(){
 }
 
 function show(id){
-  ["ballot","thanks","already"].forEach(function(s){
-    document.getElementById(s).classList.remove("show");
-    document.getElementById(s).style.display = (s === "ballot") ? "none" : "";
+  ["ballot","thanks","already","holding","closed"].forEach(function(s){
+    var el = document.getElementById(s);
+    if(s === "ballot"){ el.style.display = "none"; }
+    else { el.classList.remove("show"); }
   });
   if(id === "ballot"){ document.getElementById("ballot").style.display = ""; }
   else { document.getElementById(id).classList.add("show"); }
   document.getElementById("footer").style.display = (id === "ballot") ? "" : "none";
+  currentScreen = id;
   postHeight();
+}
+
+/* ---- time gate ---- */
+function gateState(){
+  var now = Date.now();
+  var open = OPEN_TIME ? Date.parse(OPEN_TIME) : null;
+  var close = CLOSE_TIME ? Date.parse(CLOSE_TIME) : null;
+  if(open && now < open) return "before";
+  if(close && now >= close) return "after";
+  return "open";
+}
+
+function fmtOpen(){
+  if(!OPEN_TIME) return "";
+  try{
+    return new Date(Date.parse(OPEN_TIME)).toLocaleString("en-AU", {
+      timeZone:"Australia/Melbourne", weekday:"long", day:"numeric",
+      month:"long", hour:"numeric", minute:"2-digit"
+    });
+  }catch(e){ return OPEN_TIME; }
+}
+
+function renderCountdown(){
+  var open = Date.parse(OPEN_TIME);
+  var diff = Math.max(0, open - Date.now());
+  var s = Math.floor(diff/1000);
+  var d = Math.floor(s/86400); s -= d*86400;
+  var h = Math.floor(s/3600);  s -= h*3600;
+  var m = Math.floor(s/60);    s -= m*60;
+  var cells = [];
+  if(d > 0) cells.push([d, "days"]);
+  cells.push([h, "hrs"]); cells.push([m, "min"]); cells.push([s, "sec"]);
+  document.getElementById("clock").innerHTML = cells.map(function(c){
+    return '<div class="cell"><div class="n">' + c[0] + '</div><div class="l">' + c[1] + '</div></div>';
+  }).join("");
+}
+
+function applyGate(){
+  var st = gateState();
+  if(st === "before"){
+    document.getElementById("opentime").textContent = fmtOpen();
+    renderCountdown();
+    show("holding");
+  } else if(st === "after"){
+    show("closed");
+  } else {
+    if(store(true)){ show("already"); } else { show("ballot"); }
+  }
 }
 
 function submit(){
   if(!picked.length) return;
+  if(gateState() !== "open"){ applyGate(); return; }
   var ranks = picked.map(function(id){ return byId[id].t; });
   var payload = { ts:new Date().toISOString(), ranks:ranks };
 
@@ -223,14 +302,10 @@ function submit(){
 
   var done = function(){ markVoted(); show("thanks"); };
 
-  if(ENDPOINT.indexOf("PASTE_YOUR") === 0){
-    // demo mode: skip the network call so the flow is testable
-    done(); return;
-  }
+  if(ENDPOINT.indexOf("PASTE_YOUR") === 0){ done(); return; }
   document.getElementById("go").disabled = true;
   fetch(ENDPOINT, {
-    method:"POST",
-    mode:"no-cors",
+    method:"POST", mode:"no-cors",
     headers:{ "Content-Type":"text/plain;charset=utf-8" },
     body:JSON.stringify(payload)
   }).then(done).catch(function(){
@@ -241,17 +316,29 @@ function submit(){
 
 document.getElementById("go").addEventListener("click", submit);
 document.getElementById("again").addEventListener("click", function(){
-  clearVoted(); picked = []; renderGrid(); renderPicks(); show("ballot");
+  clearVoted(); picked = []; renderGrid(); renderPicks(); applyGate();
 });
 document.getElementById("revote").addEventListener("click", function(){
-  clearVoted(); picked = []; renderGrid(); renderPicks(); show("ballot");
+  clearVoted(); picked = []; renderGrid(); renderPicks(); applyGate();
 });
 window.addEventListener("resize", postHeight);
+
+// tick: keep the countdown live and flip screens when the time passes
+setInterval(function(){
+  var st = gateState();
+  if(st === "before"){
+    if(currentScreen !== "holding"){ applyGate(); } else { renderCountdown(); postHeight(); }
+  } else if(st === "open"){
+    if(currentScreen === "holding"){ applyGate(); }
+  } else if(st === "after"){
+    if(currentScreen === "holding" || currentScreen === "ballot"){ show("closed"); }
+  }
+}, 1000);
 
 // init
 if(ENDPOINT.indexOf("PASTE_YOUR") === 0){ document.getElementById("demo").style.display = ""; }
 renderGrid(); renderPicks();
-if(store(true)){ show("already"); } else { show("ballot"); }
+applyGate();
 </script>
 </body>
 </html>
