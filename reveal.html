@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReelGood Audience Award — Winner</title>
+<style>
+  :root{
+    --blue:#3018F0; --mint:#48CC84; --mintlt:#60FCA8;
+    --pink:#FCA8E4; --maroon:#602424; --paper:#FFF0FA;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper); color:var(--maroon); line-height:1.4;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px; margin:0 auto; padding:48px 20px; text-align:center;
+    min-height:340px; display:flex; flex-direction:column; align-items:center; justify-content:center}
+
+  .kicker{font-size:13px; font-weight:800; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--maroon); opacity:.75}
+
+  /* holding */
+  #holding .dots{margin-top:18px; font-size:30px; letter-spacing:.15em; color:var(--blue)}
+  #holding .dots span{animation:blink 1.4s infinite}
+  #holding .dots span:nth-child(2){animation-delay:.2s}
+  #holding .dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+  #holding h2{color:var(--blue); font-size:26px; margin:14px 0 0; font-weight:900}
+
+  /* winner */
+  #winner{display:none}
+  #winner.show{display:block; animation:rise .6s ease both}
+  @keyframes rise{from{opacity:0; transform:translateY(14px) scale(.97)}to{opacity:1; transform:none}}
+  .star{font-size:40px; line-height:1; margin-bottom:8px}
+  #winner .award{color:var(--blue); font-size:15px; font-weight:900; letter-spacing:.02em;
+    text-transform:uppercase; margin-bottom:20px}
+  .card{background:#fff; border:3px solid var(--maroon); border-radius:20px;
+    padding:32px 26px; box-shadow:0 6px 0 var(--maroon); display:inline-block; max-width:520px}
+  .card .title{font-size:34px; font-weight:900; color:var(--maroon); line-height:1.1}
+  .card .dir{font-size:16px; margin-top:12px; opacity:.85}
+  .card .dir b{color:var(--blue)}
+  .ribbon{display:inline-block; margin-top:20px; background:var(--mint); color:#08331d;
+    font-weight:900; font-size:13px; letter-spacing:.06em; text-transform:uppercase;
+    padding:7px 16px; border-radius:999px; border:2px solid #08331d}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="holding">
+    <div class="kicker">ReelGood Audience Award</div>
+    <h2>And the winner is</h2>
+    <div class="dots"><span>.</span><span>.</span><span>.</span></div>
+  </div>
+
+  <div id="winner">
+    <div class="star">★</div>
+    <div class="award">ReelGood Audience Award 2026</div>
+    <div class="card">
+      <div class="title" id="wTitle"></div>
+      <div class="dir" id="wDir"></div>
+      <div class="ribbon">Audience Choice</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var ENDPOINT = "https://script.google.com/macros/s/AKfycbyxaNU4XA8VY5DVVjAiIC2XuZnbcZGW4ELaWyy8ifoh76CoPZKhoffQuK4LMVO2c20/exec";
+
+var DIRECTORS = {
+  "Mango Seed (芒果芯)":"Berni Jiang", "A Test":"Sam Calafiore",
+  "Then The Wind Stops":"Wentian Jin", "Inner City":"Jennifer Baulch",
+  "The Eviction":"Rebecca Metcalf", "Mission: WASH DISHES DON'T DIE":"Miki Sheoaka Flett",
+  "Rage Bait":"Hebah Ali", "Sarsaparilla":"Andrew Kavanagh", "Button Pusher":"Miski Omar",
+  "Rejoice":"Lucy de Palma", "Mystic Park":"John Hewison",
+  "Faceless":"Fraser Pemberton & William Jaka", "Piggy":"Julian Hamman",
+  "Interview With A Hero":"Andy 'Celeste' Diep", "Goodbye, Fishies":"Jonathan Zhang",
+  "The Water of the Womb":"Baris Ulusoy", "Bringing His Spirit Home":"Dylan Nicholls",
+  "Bőr":"Dylan Ferenc Nyerges", "Family Man":"Kalani Gacon",
+  "Of the Last Reel in Front of You":"Yan Geng",
+  "The Truth about the Telegraph":"Kieran Mpetyane Satour",
+  "Set Menu":"Lindsay McDonald", "Dummy":"Nikita Gomes",
+  "Baggage":"Lucy Davidson", "FAMISHED":"Nathan Sirikumara"
+};
+
+var revealed = false;
+var timer = null;
+
+function postHeight(){
+  try{
+    var h = document.querySelector(".wrap").offsetHeight + 40;
+    parent.postMessage({ type:"rgff-resize", height:h }, "*");
+  }catch(e){}
+}
+
+function reveal(title){
+  if(revealed) return;
+  revealed = true;
+  document.getElementById("wTitle").textContent = title;
+  var dir = DIRECTORS[title];
+  var el = document.getElementById("wDir");
+  if(dir){ el.innerHTML = "Directed by <b></b>"; el.querySelector("b").textContent = dir; }
+  else { el.textContent = ""; }
+  document.getElementById("holding").style.display = "none";
+  document.getElementById("winner").classList.add("show");
+  if(timer){ clearInterval(timer); }
+  postHeight();
+}
+
+window.onResult = function(d){
+  if(d && d.published && d.winner){ reveal(d.winner); }
+};
+
+function poll(){
+  if(revealed) return;
+  var s = document.createElement("script");
+  s.src = ENDPOINT + "?callback=onResult&t=" + Date.now();
+  s.onload = function(){ this.remove(); };
+  s.onerror = function(){ this.remove(); };
+  document.body.appendChild(s);
+}
+
+poll();
+timer = setInterval(poll, 15000);
+postHeight();
+</script>
+</body>
+</html>
