@@ -146,10 +146,9 @@
 
   <!-- THANKS -->
   <div class="screen" id="thanks">
-    <h2>Vote's in. Nice one.</h2>
-    <p>Thanks for backing your favourites.</p>
+    <h2>Thanks for your vote!</h2>
+    <p>Results will be published here after the ballots close at 18:15 this evening.</p>
     <div class="yourpicks" id="yourpicks"></div>
-    <p class="comeback">The winner is announced here after voting closes at <b id="closeT1"></b>. Keep this page open, or come back to it then.</p>
   </div>
 
   <!-- ALREADY VOTED -->
@@ -427,7 +426,6 @@ document.getElementById("checkNow").addEventListener("click", function(){ poll()
 
 // init
 if(ENDPOINT.indexOf("PASTE_YOUR") === 0){ document.getElementById("demo").style.display = ""; }
-document.getElementById("closeT1").textContent = fmtClose();
 document.getElementById("closeT2").textContent = fmtClose();
 renderGrid(); renderPicks();
 applyGate();
