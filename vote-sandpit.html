@@ -3,65 +3,69 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <title>Audience Award — SANDPIT</title>
 <style>
   :root{
     --blue:#3018F0; --mint:#48CC84; --mintlt:#60FCA8;
-    --pink:#FCA8E4; --maroon:#602424; --paper:#FFF0FA;
+    --pink:#FCA8E4; --maroon:#602424;
+    --display:"Archivo","DIN",system-ui,sans-serif;
+    --body:"Inter","Akkurat",system-ui,sans-serif;
   }
   *{box-sizing:border-box}
   html,body{margin:0}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:var(--paper); color:var(--maroon); line-height:1.45;
-    -webkit-font-smoothing:antialiased; padding-top:132px;
-  }
+  /* Sandpit is always viewed standalone, so paint the site pink to mimic the embed. */
+  body{background:var(--pink); font-family:var(--body); color:var(--maroon); line-height:1.45;
+    -webkit-font-smoothing:antialiased; padding-top:132px}
+  h1,h2,.t,.badge,.go,.cell .n{font-family:var(--display)}
+
   .wrap{max-width:680px; margin:0 auto; padding:22px 15px 150px}
-  header{text-align:center; margin-bottom:18px}
-  h1{font-size:24px; color:var(--blue); margin:0 0 4px; letter-spacing:-.3px; font-weight:900}
-  .lead{font-size:15px; margin:0; opacity:.85}
-  .lead b{color:var(--maroon)}
+  header{text-align:center; margin-bottom:20px}
+  h1{font-size:27px; color:var(--blue); margin:0 0 5px; font-weight:900; letter-spacing:-.2px}
+  .lead{font-size:15px; margin:0; color:var(--maroon)}
+  .lead b{font-weight:700}
   .grid{display:grid; grid-template-columns:1fr; gap:11px}
   @media(min-width:560px){.grid{grid-template-columns:1fr 1fr}}
   .film{display:flex; align-items:center; gap:12px; text-align:left;
     background:#fff; border:2px solid var(--maroon); border-radius:13px;
     padding:12px 13px; cursor:pointer; box-shadow:0 3px 0 var(--maroon);
-    transition:background .18s ease, border-color .18s ease, transform .08s ease}
+    transition:background .18s ease, transform .08s ease}
   .film:active{transform:translateY(1px)}
-  .film.picked{background:#EAFBF1; border-color:var(--mint); box-shadow:0 3px 0 var(--mint)}
+  .film.picked{background:var(--mintlt)}
   .badge{flex:0 0 34px; width:34px; height:34px; border-radius:50%;
     border:2px solid var(--maroon); display:flex; align-items:center; justify-content:center;
     font-weight:900; font-size:15px; color:var(--maroon); background:#fff; transition:all .18s ease}
-  .film.picked .badge{background:var(--blue); border-color:var(--blue); color:#fff}
+  .film.picked .badge{background:var(--blue); border-color:var(--maroon); color:#fff}
   .meta{min-width:0}
-  .t{font-weight:800; font-size:15px; line-height:1.25}
-  .d{font-size:12.5px; opacity:.7; margin-top:1px}
+  .t{font-weight:700; font-size:15.5px; line-height:1.25; color:var(--maroon)}
+  .d{font-size:12.5px; opacity:.72; margin-top:1px}
   .footer{position:fixed; left:0; right:0; bottom:0; background:#fff;
-    border-top:2px solid var(--maroon); padding:12px 15px calc(12px + env(safe-area-inset-bottom));
-    box-shadow:0 -4px 14px rgba(96,36,36,.12)}
+    border-top:2px solid var(--maroon); padding:12px 15px calc(12px + env(safe-area-inset-bottom))}
   .footer .inner{max-width:680px; margin:0 auto; display:flex; align-items:center; gap:12px}
   .picks{flex:1; font-size:13px; min-width:0}
   .picks .row{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
   .picks .empty{opacity:.6}
   .go{flex:0 0 auto; background:var(--blue); color:#fff; border:2px solid var(--maroon);
     border-radius:11px; padding:12px 20px; font-weight:900; font-size:15px; cursor:pointer;
-    box-shadow:0 3px 0 var(--maroon)}
-  .go:disabled{background:#d8c8d2; color:#fff; cursor:not-allowed; box-shadow:0 3px 0 #b7a3ae; border-color:#b7a3ae}
+    box-shadow:0 3px 0 var(--maroon); transition:background .16s ease}
+  .go:hover:not(:disabled){background:var(--maroon)}
+  .go:disabled{background:#CBB6B6; color:#fff; cursor:not-allowed;
+    border-color:#9C8383; box-shadow:0 3px 0 #9C8383}
   .screen{display:none; text-align:center; padding:56px 20px}
   .screen.show{display:block}
-  .screen h2{color:var(--blue); font-size:26px; margin:0 0 10px}
-  .screen p{font-size:15px; margin:6px 0}
-  .yourpicks{display:inline-block; text-align:left; background:#fff; border:2px solid var(--mint);
-    border-radius:13px; padding:14px 18px; margin-top:14px; box-shadow:0 3px 0 var(--mint)}
+  .screen h2{color:var(--blue); font-size:27px; margin:0 0 10px; font-weight:900}
+  .screen p{font-size:15px; margin:6px 0; max-width:420px; margin-left:auto; margin-right:auto}
+  .yourpicks{display:inline-block; text-align:left; background:#fff; border:2px solid var(--maroon);
+    border-radius:13px; padding:14px 18px; margin-top:16px; box-shadow:0 3px 0 var(--maroon)}
   .yourpicks div{font-weight:700; padding:3px 0}
-  .again{margin-top:22px; font-size:13px}
-  .again a{color:var(--blue); font-weight:700; cursor:pointer}
-  .clock{display:inline-flex; gap:10px; margin-top:20px}
+  .clock{display:inline-flex; gap:10px; margin-top:22px}
   .cell{background:#fff; border:2px solid var(--maroon); border-radius:12px; padding:10px 14px;
     min-width:64px; box-shadow:0 3px 0 var(--maroon)}
   .cell .n{font-size:28px; font-weight:900; color:var(--blue); line-height:1}
   .cell .l{font-size:11px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; margin-top:4px}
-  .opentime{font-weight:800; color:var(--maroon)}
+  .opentime{font-weight:700; color:var(--maroon)}
 
   /* sandpit controls */
   #controls{position:fixed; top:0; left:0; right:0; z-index:50; background:#241016; color:#fff;
@@ -82,10 +86,10 @@
     display:flex; align-items:center; justify-content:center; flex-direction:column; padding:24px}
   #pwgate h2{color:#fff; margin:0 0 14px}
   #pwInput{padding:11px 14px; border-radius:10px; border:0; font-size:16px; width:220px; text-align:center}
-  #pwBtn{margin-top:12px; background:var(--mint); color:#08331d; border:0; border-radius:10px;
-    padding:11px 22px; font-weight:900; font-size:15px; cursor:pointer}
+  #pwBtn{margin-top:12px; background:var(--mintlt); color:var(--maroon); border:2px solid var(--maroon);
+    border-radius:10px; padding:11px 22px; font-weight:900; font-size:15px; cursor:pointer}
   #pwMsg{margin-top:10px; font-size:13px; color:var(--pink); min-height:18px}
-</style>
+  </style>
 </head>
 <body>
 
