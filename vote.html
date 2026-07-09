@@ -78,6 +78,29 @@
   .cell .n{font-size:28px; font-weight:900; color:var(--blue); line-height:1}
   .cell .l{font-size:11px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; margin-top:4px}
   .opentime{font-weight:700; color:var(--maroon)}
+
+  .kicker{font-size:12.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--maroon); opacity:.8}
+  .comeback{font-size:13.5px; margin-top:20px; opacity:.85}
+  .comeback b{font-weight:700}
+  .dots{margin-top:16px; font-size:30px; letter-spacing:.15em; color:var(--blue)}
+  .dots span{animation:blink 1.4s infinite}
+  .dots span:nth-child(2){animation-delay:.2s}
+  .dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+  .checknow{margin-top:20px; font-size:13px}
+  .checknow a{color:var(--blue); font-weight:700; cursor:pointer; text-decoration:underline}
+  #winner.show{animation:rise .6s ease both}
+  @keyframes rise{from{opacity:0; transform:translateY(14px) scale(.97)}to{opacity:1; transform:none}}
+  .star{font-size:38px; line-height:1; margin-bottom:8px; color:var(--maroon)}
+  .card{background:#fff; border:3px solid var(--maroon); border-radius:20px;
+    padding:30px 24px; box-shadow:0 6px 0 var(--maroon); display:inline-block; max-width:520px}
+  .wtitle{font-family:var(--display); font-size:31px; font-weight:900; color:var(--maroon); line-height:1.1}
+  .wdir{font-size:15.5px; margin-top:11px; opacity:.85}
+  .wdir b{color:var(--blue); font-weight:700}
+  .ribbon{display:inline-block; margin-top:18px; background:var(--mintlt); color:var(--maroon);
+    font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase;
+    padding:7px 16px; border-radius:999px; border:2px solid var(--maroon)}
   </style>
 </head>
 <body>
@@ -101,11 +124,24 @@
     <div class="clock" id="clock"></div>
   </div>
 
-  <!-- CLOSED (after close time) -->
-  <div class="screen" id="closed">
+  <!-- COUNTING (voting closed, winner not published yet) -->
+  <div class="screen" id="counting">
+    <div class="kicker">ReelGood Audience Award</div>
     <h2>Voting's closed</h2>
-    <p>Thanks to everyone who voted.</p>
-    <p>The winner's announced at the ceremony.</p>
+    <p>Counting the votes now. The winner appears here, on this page.</p>
+    <div class="dots"><span>.</span><span>.</span><span>.</span></div>
+    <div class="checknow"><a id="checkNow">Check now</a></div>
+  </div>
+
+  <!-- WINNER -->
+  <div class="screen" id="winner">
+    <div class="star">★</div>
+    <div class="kicker" style="color:var(--blue);margin-bottom:18px">ReelGood Audience Award 2026</div>
+    <div class="card">
+      <div class="wtitle" id="wTitle"></div>
+      <div class="wdir" id="wDir"></div>
+      <div class="ribbon">Audience Choice</div>
+    </div>
   </div>
 
   <!-- THANKS -->
@@ -113,12 +149,14 @@
     <h2>Vote's in. Nice one.</h2>
     <p>Thanks for backing your favourites.</p>
     <div class="yourpicks" id="yourpicks"></div>
+    <p class="comeback">The winner is announced here after voting closes at <b id="closeT1"></b>. Keep this page open, or come back to it then.</p>
   </div>
 
   <!-- ALREADY VOTED -->
   <div class="screen" id="already">
     <h2>Already voted</h2>
     <p>This device has already cast its vote. One vote per device, so you're all set.</p>
+    <p class="comeback">The winner is announced here after voting closes at <b id="closeT2"></b>. Come back to this page then.</p>
   </div>
 
 </div>
@@ -233,7 +271,7 @@ function postHeight(){
 }
 
 function show(id){
-  ["ballot","thanks","already","holding","closed"].forEach(function(s){
+  ["ballot","thanks","already","holding","counting","winner"].forEach(function(s){
     var el = document.getElementById(s);
     if(s === "ballot"){ el.style.display = "none"; }
     else { el.classList.remove("show"); }
@@ -265,6 +303,52 @@ function fmtOpen(){
   }catch(e){ return OPEN_TIME; }
 }
 
+function fmtClose(){
+  if(!CLOSE_TIME) return "";
+  try{
+    return new Date(Date.parse(CLOSE_TIME)).toLocaleString("en-AU", {
+      timeZone:"Australia/Melbourne", hour:"numeric", minute:"2-digit" });
+  }catch(e){ return CLOSE_TIME; }
+}
+
+/* ---- winner polling ----
+   Only runs once voting has closed, so phones aren't hammering the
+   Apps Script all day and blowing its quota. Stops for good once revealed. */
+var revealed = false, pollTimer = null;
+
+function showWinner(title){
+  if(revealed) return;
+  revealed = true;
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  document.getElementById("wTitle").textContent = title;
+  var f = null;
+  for(var i=0;i<FILMS.length;i++){ if(FILMS[i].t === title){ f = FILMS[i]; break; } }
+  var el = document.getElementById("wDir");
+  if(f){ el.innerHTML = "Directed by <b></b>"; el.querySelector("b").textContent = f.d; }
+  else { el.textContent = ""; }
+  show("winner");
+  document.getElementById("winner").classList.add("show");
+}
+
+window.onResult = function(d){
+  if(d && d.published && d.winner){ showWinner(d.winner); }
+};
+
+function poll(){
+  if(revealed) return;
+  var s = document.createElement("script");
+  s.src = ENDPOINT + "?callback=onResult&t=" + Date.now();
+  s.onload = function(){ this.remove(); };
+  s.onerror = function(){ this.remove(); };
+  document.body.appendChild(s);
+}
+
+function startPolling(){
+  if(revealed || pollTimer) return;
+  poll();
+  pollTimer = setInterval(poll, 30000);
+}
+
 function renderCountdown(){
   var open = Date.parse(OPEN_TIME);
   var diff = Math.max(0, open - Date.now());
@@ -281,13 +365,15 @@ function renderCountdown(){
 }
 
 function applyGate(){
+  if(revealed){ return; }
   var st = gateState();
   if(st === "before"){
     document.getElementById("opentime").textContent = fmtOpen();
     renderCountdown();
     show("holding");
   } else if(st === "after"){
-    show("closed");
+    show("counting");
+    startPolling();
   } else {
     if(store(true)){ show("already"); } else { show("ballot"); }
   }
@@ -331,12 +417,18 @@ setInterval(function(){
   } else if(st === "open"){
     if(currentScreen === "holding"){ applyGate(); }
   } else if(st === "after"){
-    if(currentScreen === "holding" || currentScreen === "ballot"){ show("closed"); }
+    if(!revealed && currentScreen !== "counting" && currentScreen !== "winner"){
+      show("counting"); startPolling();
+    }
   }
 }, 1000);
 
+document.getElementById("checkNow").addEventListener("click", function(){ poll(); });
+
 // init
 if(ENDPOINT.indexOf("PASTE_YOUR") === 0){ document.getElementById("demo").style.display = ""; }
+document.getElementById("closeT1").textContent = fmtClose();
+document.getElementById("closeT2").textContent = fmtClose();
 renderGrid(); renderPicks();
 applyGate();
 </script>

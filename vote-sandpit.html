@@ -66,6 +66,26 @@
   .cell .n{font-size:28px; font-weight:900; color:var(--blue); line-height:1}
   .cell .l{font-size:11px; text-transform:uppercase; letter-spacing:.06em; opacity:.7; margin-top:4px}
   .opentime{font-weight:700; color:var(--maroon)}
+  .kicker{font-size:12.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--maroon); opacity:.8}
+  .comeback{font-size:13.5px; margin-top:20px; opacity:.85}
+  .dots{margin-top:16px; font-size:30px; letter-spacing:.15em; color:var(--blue)}
+  .dots span{animation:blink 1.4s infinite}
+  .dots span:nth-child(2){animation-delay:.2s}
+  .dots span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+  .star{font-size:38px; line-height:1; margin-bottom:8px; color:var(--maroon)}
+  .card{background:#fff; border:3px solid var(--maroon); border-radius:20px;
+    padding:30px 24px; box-shadow:0 6px 0 var(--maroon); display:inline-block; max-width:520px}
+  .wtitle{font-family:var(--display); font-size:31px; font-weight:900; color:var(--maroon); line-height:1.1}
+  .wdir{font-size:15.5px; margin-top:11px; opacity:.85}
+  .wdir b{color:var(--blue); font-weight:700}
+  .ribbon{display:inline-block; margin-top:18px; background:var(--mintlt); color:var(--maroon);
+    font-weight:700; font-size:12.5px; letter-spacing:.06em; text-transform:uppercase;
+    padding:7px 16px; border-radius:999px; border:2px solid var(--maroon)}
+  #pubBtn{background:var(--mintlt); color:#241016; border:0; border-radius:8px; font-weight:800;
+    padding:7px 12px; cursor:pointer; white-space:nowrap}
+  #pubBtn.on{background:var(--blue); color:#fff}
 
   /* sandpit controls */
   #controls{position:fixed; top:0; left:0; right:0; z-index:50; background:#241016; color:#fff;
@@ -109,6 +129,7 @@
       <div class="c-time" id="cTime"></div>
       <input type="range" id="scrub">
       <button id="playBtn">Play</button>
+      <button id="pubBtn">Publish winner</button>
     </div>
     <div class="c-presets" id="presets"></div>
   </div>
@@ -128,10 +149,20 @@
     <p>Come back at <span class="opentime" id="opentime"></span>.</p>
     <div class="clock" id="clock"></div>
   </div>
-  <div class="screen" id="closed">
+  <div class="screen" id="counting">
+    <div class="kicker">ReelGood Audience Award</div>
     <h2>Voting's closed</h2>
-    <p>Thanks to everyone who voted.</p>
-    <p>The winner's announced at the ceremony.</p>
+    <p>Counting the votes now. The winner appears here, on this page.</p>
+    <div class="dots"><span>.</span><span>.</span><span>.</span></div>
+  </div>
+  <div class="screen" id="winner">
+    <div class="star">★</div>
+    <div class="kicker" style="color:var(--blue);margin-bottom:18px">ReelGood Audience Award 2026</div>
+    <div class="card">
+      <div class="wtitle" id="wTitle"></div>
+      <div class="wdir" id="wDir"></div>
+      <div class="ribbon">Audience Choice</div>
+    </div>
   </div>
   <div class="screen" id="thanks">
     <h2>Vote's in. Nice one.</h2>
@@ -141,6 +172,7 @@
   <div class="screen" id="already">
     <h2>Already voted</h2>
     <p>This device has already cast its vote. One vote per device, so you're all set.</p>
+    <p class="comeback">The winner is announced here after voting closes at <b>6:15 pm</b>. Come back to this page then.</p>
   </div>
 </div>
 
@@ -238,7 +270,7 @@ function renderPicks(){
   document.getElementById("go").disabled = picked.length === 0;
 }
 function show(id){
-  ["ballot","thanks","already","holding","closed"].forEach(function(s){
+  ["ballot","thanks","already","holding","counting","winner"].forEach(function(s){
     var el = document.getElementById(s);
     if(s === "ballot"){ el.style.display = "none"; } else { el.classList.remove("show"); }
   });
@@ -276,10 +308,26 @@ function renderCountdown(){
     return '<div class="cell"><div class="n">' + c[0] + '</div><div class="l">' + c[1] + '</div></div>';
   }).join("");
 }
+/* SANDPIT: winner is faked with the Publish button, no network call. */
+var published = false;
+var FAKE_WINNER = "The Eviction";
+
+function showWinner(title){
+  document.getElementById("wTitle").textContent = title;
+  var f = null;
+  for(var i=0;i<FILMS.length;i++){ if(FILMS[i].t === title){ f = FILMS[i]; break; } }
+  var el = document.getElementById("wDir");
+  if(f){ el.innerHTML = "Directed by <b></b>"; el.querySelector("b").textContent = f.d; }
+  else { el.textContent = ""; }
+  show("winner");
+}
+
 function applyGate(){
   var st = gateState();
   if(st === "before"){ document.getElementById("opentime").textContent = fmtOpen(); renderCountdown(); show("holding"); }
-  else if(st === "after"){ show("closed"); }
+  else if(st === "after"){
+    if(published){ showWinner(FAKE_WINNER); } else { show("counting"); }
+  }
   else { if(store(true)){ show("already"); } else { show("ballot"); } }
 }
 function submit(){
@@ -333,6 +381,13 @@ function pause(){
   if(playTimer){ clearInterval(playTimer); playTimer = null; }
 }
 document.getElementById("playBtn").addEventListener("click", function(){ playing ? pause() : play(); });
+
+document.getElementById("pubBtn").addEventListener("click", function(){
+  published = !published;
+  this.classList.toggle("on", published);
+  this.textContent = published ? "Winner published" : "Publish winner";
+  applyGate();
+});
 
 /* ---- password gate ---- */
 function unlock(){
